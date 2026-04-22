@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Handwritten Digit Recognition — CNN</title>
+<link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<header>
+    <div class="header-inner">
+    <div class="logo">
+        <svg width="38" height="38" viewBox="0 0 38 38" fill="none" aria-label="DigitCNN">
+        <rect width="38" height="38" rx="9" fill="#4f98a3" opacity="0.15"/>
+        <rect x="4" y="4" width="30" height="30" rx="7" stroke="#4f98a3" stroke-width="1.5" fill="none"/>
+        <text x="19" y="26" text-anchor="middle" font-family="monospace"
+                font-size="18" font-weight="bold" fill="#4f98a3">7</text>
+        </svg>
+        <div>
+        <span class="logo-title">DigitCNN</span>
+        <span class="logo-sub">Handwritten Digit Recognition</span>
+        </div>
+    </div>
+    <button data-theme-toggle class="theme-btn" aria-label="Toggle theme">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+    </button>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+    <h1>Handwritten Digit Recognition</h1>
+    <p>Draw a digit or upload an image — CNN predicts it instantly using deep learning trained on MNIST</p>
+    <div class="tech-badges">
+        <span class="tbadge">CNN</span>
+        <span class="tbadge">PyTorch</span>
+        <span class="tbadge">MNIST Dataset</span>
+        <span class="tbadge">Flask API</span>
+        <span class="tbadge">28×28 Input</span>
+        <span class="tbadge">~99% Accuracy</span>
+    </div>
+    </div>
+
+    <!-- PIPELINE DIAGRAM -->
+    <div class="pipeline">
+    <div class="pipe-step"><strong>Input</strong>Draw / Upload</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><strong>Preprocess</strong>Grayscale 28×28</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><strong>Conv Block 1</strong>32 Filters</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><strong>Conv Block 2</strong>64 Filters</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><strong>FC Layers</strong>512 → 128</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><strong>Output</strong>Digit 0–9</div>
+    </div>
+</header>
+
+<!-- TABS -->
+<div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('draw')">✏️ Draw Digit</button>
+    <button class="tab-btn"        onclick="switchTab('upload')">📂 Upload Image</button>
+</div>
+
+<!-- DRAW TAB -->
+<div id="tab-draw" class="tab-content">
+    <div class="card">
+    <div class="canvas-area">
+        <div class="canvas-header">
+        <span>Draw a single digit (0–9) inside the box</span>
+        <div class="canvas-tools">
+            <label class="tool-label">
+            Brush Size
+            <input type="range" id="brushSize" min="8" max="40" value="20" class="slider"/>
+            </label>
+            <button class="btn-clear" onclick="clearCanvas()">🗑 Clear</button>
+        </div>
+        </div>
+        <div class="canvas-wrapper">
+        <canvas id="drawCanvas" width="280" height="280"></canvas>
+        <div class="canvas-hint" id="canvasHint">✏️ Draw here</div>
+        </div>
+        <div class="canvas-footer">
+        <button class="btn-predict" id="drawPredictBtn" onclick="predictCanvas()" disabled>
+            🎯 Recognize Digit
+        </button>
+        <p class="note">Use thick bold strokes — similar to MNIST handwriting style</p>
+        </div>
+    </div>
+    </div>
+</div>
+
+<!-- UPLOAD TAB -->
+<div id="tab-upload" class="tab-content hidden">
+    <div class="card">
+    <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">🖼️</div>
+        <p>Drag &amp; Drop a digit image here &nbsp;<strong>or</strong></p>
+        <label for="fileInput" class="btn-upload">📂 Choose Image File</label>
+        <input type="file" id="fileInput" accept="image/*" hidden/>
+        <p class="note">PNG, JPG, BMP supported · White background with dark digit works best</p>
+    </div>
+    </div>
+</div>
+
+<!-- RESULT SECTION -->
+<div id="resultSection" class="hidden">
+    <div class="grid">
+
+    <!-- LEFT: Input Preview + Architecture -->
+    <div class="card">
+        <h3>📸 Input Image</h3>
+        <div class="preview-box">
+        <img id="previewImg" src="" alt="Input digit"
+            width="200" height="200" loading="lazy"/>
+        <p class="preview-label" id="previewLabel"></p>
+        </div>
+        <div class="info-box">
+        <div class="info-item">
+            <span class="info-label">Resize</span>
+            <span class="info-val">28 × 28</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Mean (μ)</span>
+            <span class="info-val">0.1307</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Std (σ)</span>
+            <span class="info-val">0.3081</span>
+        </div>
+        </div>
+
+        <div class="arch-card">
+        <h4>🏗️ CNN Architecture</h4>
+        <div class="arch-layers">
+            <div class="arch-layer input">Input<br/><small>1×28×28</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-layer conv">Conv2D<br/><small>32</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-layer pool">MaxPool<br/><small>2×2</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-layer conv">Conv2D<br/><small>64</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-layer pool">MaxPool<br/><small>2×2</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-layer fc">FC<br/><small>512</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-layer fc">FC<br/><small>128</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-layer output">Out<br/><small>10</small></div>
+        </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Prediction Result -->
+    <div class="card">
+        <h3>🎯 Recognition Result</h3>
+
+        <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Analyzing digit...</p>
+        <p class="loading-sub">Grayscale → Normalize → CNN Forward → Softmax</p>
+        </div>
+
+        <div id="predBox" class="hidden">
+        <span id="badge" class="badge"></span>
+
+        <div class="digit-card">
+            <div class="digit-display" id="predDigit"></div>
+            <div class="digit-sub">Predicted Digit</div>
+        </div>
+
+        <div class="conf-section">
+            <div class="conf-header">
+            <span>Confidence Score</span>
+            <span id="confPct" style="font-weight:700;color:var(--color-primary)"></span>
+            </div>
+            <div class="bar-wrap">
+            <div class="bar-fill" id="barFill"></div>
+            </div>
+        </div>
+
+        <div class="prob-grid">
+            <h4>📊 All Digit Probabilities (0–9)</h4>
+            <div class="prob-bars" id="probBars"></div>
+        </div>
+        </div>
+
+        <div id="errBox" class="err hidden"></div>
+    </div>
+    </div>
+
+    <div class="center">
+    <button class="btn-reset" onclick="resetApp()">🔄 Try Another Digit</button>
+    </div>
+</div>
+
+<!-- ABOUT -->
+<div class="about-section">
+    <h2>📚 About This Project</h2>
+    <div class="about-grid">
+    <div class="about-card">
+        <div class="about-icon">🗃️</div>
+        <h4>Dataset — MNIST</h4>
+        <p>70,000 handwritten digit images. 60,000 train + 10,000 test. 28×28 grayscale, 10 classes (0–9).</p>
+    </div>
+    <div class="about-card">
+        <div class="about-icon">🧠</div>
+        <h4>CNN Architecture</h4>
+        <p>2 Conv blocks (32→64 filters) with BatchNorm, ReLU, MaxPool, Dropout. 3-layer FC classifier.</p>
+    </div>
+    <div class="about-card">
+        <div class="about-icon">🎯</div>
+        <h4>Performance</h4>
+        <p>~99.2% test accuracy. Dropout (0.25 / 0.5 / 0.3) prevents overfitting. Early stopping used.</p>
+    </div>
+    <div class="about-card">
+        <div class="about-icon">⚙️</div>
+        <h4>Training Setup</h4>
+        <p>Adam (lr=1e-3, wd=1e-4), CrossEntropy loss, ReduceLROnPlateau, early stopping patience=7.</p>
+    </div>
+    </div>
+</div>
+
+
+</div>
+
+<script>
+// ── THEME TOGGLE ─────────────────────────────────────────────────────────────
+(function () {
+const t = document.querySelector('[data-theme-toggle]');
+const r = document.documentElement;
+let d = 'dark';
+r.setAttribute('data-theme', d);
+t && t.addEventListener('click', () => {
+    d = d === 'dark' ? 'light' : 'dark';
+    r.setAttribute('data-theme', d);
+    t.innerHTML = d === 'dark'
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+});
+})();
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && tab === 'draw') || (i === 1 && tab === 'upload'));
+});
+document.getElementById('tab-draw').classList.toggle('hidden', tab !== 'draw');
+document.getElementById('tab-upload').classList.toggle('hidden', tab !== 'upload');
+hide('resultSection');
+}
+
+// ── CANVAS DRAWING ────────────────────────────────────────────────────────────
+const canvas = document.getElementById('drawCanvas');
+const ctx    = canvas.getContext('2d');
+let drawing  = false;
+let hasDrawn = false;
+
+ctx.fillStyle   = '#000000';
+ctx.fillRect(0, 0, 280, 280);
+ctx.strokeStyle = '#ffffff';
+ctx.lineWidth   = 20;
+ctx.lineCap     = 'round';
+ctx.lineJoin    = 'round';
+
+document.getElementById('brushSize').addEventListener('input', e => {
+ctx.lineWidth = parseInt(e.target.value);
+});
+
+function getPos(e, c) {
+const rect = c.getBoundingClientRect();
+const sx = c.width / rect.width;
+const sy = c.height / rect.height;
+if (e.touches) {
+    return { x: (e.touches[0].clientX - rect.left) * sx, y: (e.touches[0].clientY - rect.top) * sy };
+}
+  return { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy };
+}
+
+function startDraw(e) {
+drawing = true;
+const p = getPos(e, canvas);
+ctx.beginPath();
+ctx.moveTo(p.x, p.y);
+e.preventDefault();
+}
+
+function draw(e) {
+if (!drawing) return;
+const p = getPos(e, canvas);
+ctx.lineTo(p.x, p.y);
+ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(p.x, p.y);
+if (!hasDrawn) {
+    hasDrawn = true;
+    document.getElementById('canvasHint').style.display = 'none';
+    document.getElementById('drawPredictBtn').disabled  = false;
+}
+e.preventDefault();
+}
+
+function stopDraw() { drawing = false; }
+
+canvas.addEventListener('mousedown',  startDraw);
+canvas.addEventListener('mousemove',  draw);
+canvas.addEventListener('mouseup',    stopDraw);
+canvas.addEventListener('mouseleave', stopDraw);
+canvas.addEventListener('touchstart', startDraw, { passive: false });
+canvas.addEventListener('touchmove',  draw,      { passive: false });
+canvas.addEventListener('touchend',   stopDraw);
+
+function clearCanvas() {
+ctx.fillStyle = '#000000';
+ctx.fillRect(0, 0, 280, 280);
+hasDrawn = false;
+document.getElementById('canvasHint').style.display = 'flex';
+document.getElementById('drawPredictBtn').disabled  = true;
+hide('resultSection');
+}
+
+// ── PREDICT FROM CANVAS ───────────────────────────────────────────────────────
+function predictCanvas() {
+const dataURL = canvas.toDataURL('image/png');
+document.getElementById('previewImg').src          = dataURL;
+document.getElementById('previewLabel').textContent = '✏️ Canvas Drawing';
+showResult();
+
+fetch('/predict', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ image: dataURL })
+})
+.then(r  => r.json())
+.then(d  => { hide('loading'); if (d.error) showErr(d.error); else showPrediction(d); })
+.catch(() => { hide('loading'); showErr('Server error. Make sure app.py is running on port 5000.'); });
+}
+
+// ── FILE UPLOAD ───────────────────────────────────────────────────────────────
+const dropZone  = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover',  e  => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+e.preventDefault();
+dropZone.classList.remove('drag-over');
+processFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => processFile(e.target.files[0]));
+
+function processFile(file) {
+if (!file) return;
+
+const reader = new FileReader();
+reader.onload = ev => {
+    document.getElementById('previewImg').src          = ev.target.result;
+    document.getElementById('previewLabel').textContent = '📁 ' + file.name;
+};
+reader.readAsDataURL(file);
+
+showResult();
+
+const fd = new FormData();
+fd.append('file', file);
+
+fetch('/predict', { method: 'POST', body: fd })
+    .then(r  => r.json())
+    .then(d  => { hide('loading'); if (d.error) showErr(d.error); else showPrediction(d); })
+    .catch(() => { hide('loading'); showErr('Server error. Make sure app.py is running on port 5000.'); });
+}
+
+// ── SHOW / RENDER PREDICTION ──────────────────────────────────────────────────
+function showResult() {
+show('resultSection');
+hide('predBox');
+hide('errBox');
+show('loading');
+document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showPrediction(data) {
+hide('loading');
+
+document.getElementById('predDigit').textContent = data.prediction;
+document.getElementById('confPct').textContent   = data.confidence + '%';
+document.getElementById('barFill').style.width   = data.confidence + '%';
+
+const badge = document.getElementById('badge');
+if      (data.confidence >= 90) { badge.textContent = '✅ High Confidence';   badge.className = 'badge high'; }
+else if (data.confidence >= 60) { badge.textContent = '⚠️ Medium Confidence'; badge.className = 'badge medium'; }
+else                             { badge.textContent = '❗ Low Confidence';    badge.className = 'badge low'; }
+
+document.getElementById('probBars').innerHTML = data.all_probs.map((p, i) => `
+    <div class="prob-row ${i == data.prediction ? 'prob-active' : ''}">
+    <span class="prob-digit">${i}</span>
+    <div class="prob-bar-wrap"><div class="prob-bar" style="width:${p}%"></div></div>
+    <span class="prob-val">${p}%</span>
+    </div>
+`).join('');
+
+show('predBox');
+}
+
+function showErr(msg) {
+const b = document.getElementById('errBox');
+b.textContent = '❌ ' + msg;
+b.classList.remove('hidden');
+}
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+function resetApp() {
+hide('resultSection');
+clearCanvas();
+fileInput.value = '';
+switchTab('draw');
+}
+</script>
+</body>
+</html>
