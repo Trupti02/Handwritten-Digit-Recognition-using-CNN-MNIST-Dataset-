@@ -34,31 +34,8 @@
     <!-- HERO -->
     <div class="hero">
     <h1>Handwritten Digit Recognition</h1>
-    <p>Draw a digit or upload an image — CNN predicts it instantly using deep learning trained on MNIST</p>
-    <div class="tech-badges">
-        <span class="tbadge">CNN</span>
-        <span class="tbadge">PyTorch</span>
-        <span class="tbadge">MNIST Dataset</span>
-        <span class="tbadge">Flask API</span>
-        <span class="tbadge">28×28 Input</span>
-        <span class="tbadge">~99% Accuracy</span>
-    </div>
     </div>
 
-    <!-- PIPELINE DIAGRAM -->
-    <div class="pipeline">
-    <div class="pipe-step"><strong>Input</strong>Draw / Upload</div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><strong>Preprocess</strong>Grayscale 28×28</div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><strong>Conv Block 1</strong>32 Filters</div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><strong>Conv Block 2</strong>64 Filters</div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><strong>FC Layers</strong>512 → 128</div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><strong>Output</strong>Digit 0–9</div>
-    </div>
 </header>
 
 <!-- TABS -->
@@ -89,7 +66,7 @@
         <button class="btn-predict" id="drawPredictBtn" onclick="predictCanvas()" disabled>
             🎯 Recognize Digit
         </button>
-        <p class="note">Use thick bold strokes — similar to MNIST handwriting style</p>
+        
         </div>
     </div>
     </div>
@@ -117,44 +94,10 @@
         <h3>📸 Input Image</h3>
         <div class="preview-box">
         <img id="previewImg" src="" alt="Input digit"
-            width="200" height="200" loading="lazy"/>
+            width="200" height="100" loading="lazy"/>
         <p class="preview-label" id="previewLabel"></p>
         </div>
-        <div class="info-box">
-        <div class="info-item">
-            <span class="info-label">Resize</span>
-            <span class="info-val">28 × 28</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Mean (μ)</span>
-            <span class="info-val">0.1307</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Std (σ)</span>
-            <span class="info-val">0.3081</span>
-        </div>
-        </div>
 
-        <div class="arch-card">
-        <h4>🏗️ CNN Architecture</h4>
-        <div class="arch-layers">
-            <div class="arch-layer input">Input<br/><small>1×28×28</small></div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-layer conv">Conv2D<br/><small>32</small></div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-layer pool">MaxPool<br/><small>2×2</small></div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-layer conv">Conv2D<br/><small>64</small></div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-layer pool">MaxPool<br/><small>2×2</small></div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-layer fc">FC<br/><small>512</small></div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-layer fc">FC<br/><small>128</small></div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-layer output">Out<br/><small>10</small></div>
-        </div>
-        </div>
     </div>
 
     <!-- RIGHT: Prediction Result -->
@@ -200,38 +143,11 @@
     </div>
 </div>
 
-<!-- ABOUT -->
-<div class="about-section">
-    <h2>📚 About This Project</h2>
-    <div class="about-grid">
-    <div class="about-card">
-        <div class="about-icon">🗃️</div>
-        <h4>Dataset — MNIST</h4>
-        <p>70,000 handwritten digit images. 60,000 train + 10,000 test. 28×28 grayscale, 10 classes (0–9).</p>
-    </div>
-    <div class="about-card">
-        <div class="about-icon">🧠</div>
-        <h4>CNN Architecture</h4>
-        <p>2 Conv blocks (32→64 filters) with BatchNorm, ReLU, MaxPool, Dropout. 3-layer FC classifier.</p>
-    </div>
-    <div class="about-card">
-        <div class="about-icon">🎯</div>
-        <h4>Performance</h4>
-        <p>~99.2% test accuracy. Dropout (0.25 / 0.5 / 0.3) prevents overfitting. Early stopping used.</p>
-    </div>
-    <div class="about-card">
-        <div class="about-icon">⚙️</div>
-        <h4>Training Setup</h4>
-        <p>Adam (lr=1e-3, wd=1e-4), CrossEntropy loss, ReduceLROnPlateau, early stopping patience=7.</p>
-    </div>
-    </div>
-</div>
-
 
 </div>
 
 <script>
-// ── THEME TOGGLE ─────────────────────────────────────────────────────────────
+
 (function () {
 const t = document.querySelector('[data-theme-toggle]');
 const r = document.documentElement;
@@ -246,7 +162,7 @@ t && t.addEventListener('click', () => {
 });
 })();
 
-// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+
 function switchTab(tab) {
 document.querySelectorAll('.tab-btn').forEach((b, i) => {
     b.classList.toggle('active', (i === 0 && tab === 'draw') || (i === 1 && tab === 'upload'));
@@ -256,7 +172,7 @@ document.getElementById('tab-upload').classList.toggle('hidden', tab !== 'upload
 hide('resultSection');
 }
 
-// ── CANVAS DRAWING ────────────────────────────────────────────────────────────
+
 const canvas = document.getElementById('drawCanvas');
 const ctx    = canvas.getContext('2d');
 let drawing  = false;
@@ -325,7 +241,7 @@ document.getElementById('drawPredictBtn').disabled  = true;
 hide('resultSection');
 }
 
-// ── PREDICT FROM CANVAS ───────────────────────────────────────────────────────
+
 function predictCanvas() {
 const dataURL = canvas.toDataURL('image/png');
 document.getElementById('previewImg').src          = dataURL;
@@ -342,7 +258,7 @@ fetch('/predict', {
 .catch(() => { hide('loading'); showErr('Server error. Make sure app.py is running on port 5000.'); });
 }
 
-// ── FILE UPLOAD ───────────────────────────────────────────────────────────────
+
 const dropZone  = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 
@@ -376,7 +292,6 @@ fetch('/predict', { method: 'POST', body: fd })
     .catch(() => { hide('loading'); showErr('Server error. Make sure app.py is running on port 5000.'); });
 }
 
-// ── SHOW / RENDER PREDICTION ──────────────────────────────────────────────────
 function showResult() {
 show('resultSection');
 hide('predBox');
